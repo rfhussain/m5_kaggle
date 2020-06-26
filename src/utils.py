@@ -3,6 +3,7 @@ import numpy as np
 import gc
 import os
 from tqdm import tqdm_notebook
+from tqdm import tqdm
 from datetime import datetime
 from sklearn.preprocessing import LabelEncoder
 import warnings
@@ -13,10 +14,10 @@ warnings.filterwarnings("ignore")
 
 class M5AccuracyUtils():
 
-    def __init__(self, submission_path):
+    def __init__(self,data_folder):
         super().__init__()
-        self.__data_folder = '..//data//'
-        self.__submission_path = submission_path
+        self.__data_folder = data_folder
+        self.init_event()
 
 
     def get_mean_attributes(self, mean_cols,index_cols, df):
@@ -49,10 +50,10 @@ class M5AccuracyUtils():
         df = df.drop(['wm_yr_wk','wday','sell_price'], axis=1)
         return df
 
-    def _get_d_of_m(self,col): 
+    def __get_d_of_m(self,col): 
         return col.day
 
-    def _get_calendar_df(self):
+    def __get_calendar_df(self):
         '''
         - This function will return the calendar data frame 
         - It will also remove d_ from the day column
@@ -65,21 +66,25 @@ class M5AccuracyUtils():
         gc.collect()
 
         #get day of month
-        df['dom'] = df['date'].apply(self._get_d_of_m)
-        #returning the data frame
+        df['dom'] = df['date'].apply(self.__get_d_of_m)
+
+        #dropping the date column
+        df.drop(['date'], axis=1, inplace=True)
+
+        #returning the data frame        
         return df
 
 
-    def _get_prices_df(self):
+    def __get_prices_df(self):
         df = pd.read_csv(os.path.join(self.__data_folder,'sell_prices.csv'))
         return df
 
     def merge_sales_calendar_prices(self,df):
-        df_cal = self._get_calendar_df()
-        df_prices = self._get_prices_df()
+        df_cal = self.__get_calendar_df()
+        df_prices = self.__get_prices_df()
 
         #merging sales with calendar
-        df = df.merge(df_cal[['date','wm_yr_wk','wday','d','month','year','dom']], on=['d'], how='left')
+        df = df.merge(df_cal[['wm_yr_wk','wday','d','month','year','dom']], on=['d'], how='left')
         
         #merging sales with prices
         df = df.merge(df_prices, how='left', on=['store_id','item_id','wm_yr_wk'])
@@ -128,7 +133,7 @@ class M5AccuracyUtils():
         '''
         for col in cols:
             gb = df.groupby([col,'d'], as_index=False).target.sum()
-            gb.rename(columns = {'target','target_' + str(col)})
+            gb.rename(columns = {'target':'target_' + str(col)}, inplace=True)
             df = df.merge(gb, how='left', on=[col,'d']).fillna(0)
             del gb
             gc.collect()
@@ -177,31 +182,42 @@ class M5AccuracyUtils():
         #getting the lag columns
         cols_to_rename = list(df.columns.difference(index_cols + exception_cols)) 
 
-        for day_shift in tqdm_notebook(shift_range):
+        for day_shift in tqdm(shift_range):
 
             train_shift = df[index_cols + cols_to_rename].copy()
-            print('copied to train_shift...')
+            #print('copied to train_shift...')
 
             train_shift['d'] = train_shift['d'] + day_shift
-            print(f'added lag by adding {day_shift} to [d] column...')
+            #print(f'added lag by adding {day_shift} to [d] column...')
             
             foo = lambda x: '{}_lag_{}'.format(x, day_shift) if x in cols_to_rename else x
             train_shift = train_shift.rename(columns=foo)
-            print('renamed the columns as col_lag_x...')
+            #print('renamed the columns as col_lag_x...')
 
             df = pd.merge(df, train_shift, on=index_cols, how='left').fillna(0)
-            print(f'performed the merge ---------{day_shift}--------------..')
+            #print(f'performed the merge ---------{day_shift}--------------..\n')
+            #print('*'*day_shift, day_shift)
 
         
-        print('\n\n DONE\n\n')
+        print('\ndone with the lags...\n')
 
         # type casting the lag columns (in my opinion lags are int values)
         for lag_col in [col for col in df.columns if 'lag' in str(col)]:
             df[lag_col] = df[lag_col].astype('int16')  
-        print('type casted all lag columns to int16 (please note: i did int because sample submission file has int values for results)...')
+        #print('type casted all lag columns to int16 (please note: i did int because sample submission file has int values for results)...')
 
         # returning the resulting data frame
         return df
+    
+    def log_event(self,sn,msg):
+        print('{:<5d}{:<77}{:<11}'.format(sn,msg,datetime.now().strftime("%H:%M:%S")))
+
+    def init_event(self):
+        print('\n')
+        print('{:5}{:77}{:11}'.format('SN','Event Performed','Time Elapsed'))
+        print('-----------------------------------------------------------------------------------------------')
+
+
 
 
 

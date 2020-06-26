@@ -2,17 +2,17 @@ import pandas as pd
 import numpy as np
 import os
 import gc
-from . import utils
+import utils
+from datetime import datetime 
+
 
 class M5AccuracyCook():
-    def __init__(self, submission_path, days_to_train):
+    def __init__(self, features_folder, data_folder , days_to_train):
         super().__init__()
-        self.submission_path = submission_path
-        self.__data_folder = '..//data//'
-        self.__features_folder = '..//features//'
-        self.__m5util = utils.M5AccuracyUtils(self.submission_path)
+        self.__data_folder = data_folder
+        self.__features_folder = features_folder
+        self.__m5util = utils.M5AccuracyUtils(self.__data_folder)
         self.__days_to_train = days_to_train
-        
     
     def cook_data(self):
         '''
@@ -28,27 +28,40 @@ class M5AccuracyCook():
         # model in the pipeline
         #######################################################
 
+        self.__m5util.log_event(0,'preparing to cook...')
 
         # 1. read the evaluation data set
         df_eval = pd.read_csv(os.path.join(self.__data_folder,'sales_train_evaluation.csv'))
 
+        self.__m5util.log_event(1,'evaluation dataframe loaded...')
+
         # 2. melting the data frame
         df_eval = self.__m5util.melt_dataframe(df_eval)
 
+        self.__m5util.log_event(2,'performed the melt of evaluation data frame... ')
+
         # 3. joining the calendar and prices
         df_eval = self.__m5util.merge_sales_calendar_prices(df_eval)
+
+        self.__m5util.log_event(3,'joined the calendar and prices with evaluation data... ')
 
         # 4. adding the group by columns
         group_by_cols = ['item_id','dept_id']
         df_eval = self.__m5util.add_group_by_cols(group_by_cols,df_eval)
 
+        self.__m5util.log_event(4,'added the group by cols for... ' + str(group_by_cols))
+
         # 5. adding the label encodes
         df_eval = self.__m5util.add_label_encodes(df_eval)
+
+        self.__m5util.log_event(5,'performed the label encodes on categorical columns... ')
 
         # 6. adding the Means
         mean_enc_cols = ['store_id_code','cat_id_code','state_id_code','item_id_code','dept_id_code']
         index_cols = ['item_id_code','store_id_code']
         df_eval = self.__m5util.get_mean_attributes(mean_enc_cols,index_cols,df_eval)
+
+        self.__m5util.log_event(6,'added the mean attributes to...(please refer to prepare.py pipeline #6...)')
 
         #########################################################
         # IMPORTANT: for time being we are just getting 180 days
@@ -58,6 +71,22 @@ class M5AccuracyCook():
         # 7. getting last 180 days of data
         df_eval =df_eval[(df_eval.d > (df_eval.d.max() - self.__days_to_train))]
 
+        
+        self.__m5util.log_event(7,'restricted the data by ' + str(self.__days_to_train))
+
+        print('\n')
+
+
+
+        #####################EXTRA FUNCTION#####################
+        #
+        # Deleting additional columns which otherwise should
+        # not be deleted when working on a full feature set 
+        # however we are currently deleting them
+        # ['wm_yr_wk','wday','sell_price']
+        #####################EXTRA FUNCTION#####################
+        df_eval = self.__m5util.del_additional_cols(df_eval)
+
 
         # 8. adding the lags
         mean_enc_cols = [col for col in df_eval.columns if 'mean' in str(col)]
@@ -65,9 +94,11 @@ class M5AccuracyCook():
                                   'state_id', 'wday', 'wm_yr_wk','year','month','dom']
 
         index_cols = ['store_id_code','item_id_code','d']
-        shift_range = [x for x in range(1,10)] 
+        shift_range = [x for x in range(1,29)] 
 
         df_eval = self.__m5util.add_lags(df_eval,shift_range,index_cols,exception_cols)
+
+        self.__m5util.log_event(8,'added lags...')
 
 
         #########################################################
@@ -80,7 +111,14 @@ class M5AccuracyCook():
         # but future we will be creating multiple feature set
         #########################################################
 
-        drop_columns= ['id','target','target_dept','target_item','month','year','dom']
+        #drop_columns=  ['id','target','target_dept_id','target_item_id','month','year','dom']
+        drop_columns = ['id','target','target_dept_id','target_item_id','month','year','dom']
+
+        #print('columns for eval data are below \n\n')
+
+        #print(df_eval.columns)
+
+        #print('\n\ncolumns we are going to drop are: ',drop_columns,'\n\n')
 
         # ########## TRAINING DATA (This data will be used to predict for X_valid)
         X_train = df_eval[df_eval.d <= df_eval.d.max()-28].drop(drop_columns, axis=1) 
@@ -103,15 +141,25 @@ class M5AccuracyCook():
         #adding 28 for all the days
         X_test.d = X_test.d + 28 
 
+        self.__m5util.log_event(9,'data split performed on X_train, X_valid, X_test & X_test_final...')
+
 
         # 10. Saving the Records
+
+        # ########## Train Set  (1 ~ 1942-28)  means 1~1913
         X_train.to_csv(os.path.join(self.__features_folder,'X_train.csv'))
         y_train.to_csv(os.path.join(self.__features_folder,'y_train.csv'))
 
+        # ########## Valid Set  (1913 ~ 1942) for prediction
         X_valid.to_csv(os.path.join(self.__features_folder,'X_valid.csv'))
         y_valid.to_csv(os.path.join(self.__features_folder,'y_valid.csv'))
 
+        # ########## Test set (1942 ~ 1969) for prediction
         X_test.to_csv(os.path.join(self.__features_folder,'X_test.csv'))
 
+        # ########## Final Training Set (1 ~ 1942) for training data to predict on test set(1942 ~ 1969)
         X_train_final.to_csv(os.path.join(self.__features_folder,'X_train_final.csv'))
         y_train_final.to_csv(os.path.join(self.__features_folder,'y_train_final.csv'))
+
+
+        self.__m5util.log_event(10,'saved the feature set at ' + str(self.__features_folder)  + ' folder')
