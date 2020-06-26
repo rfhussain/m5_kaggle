@@ -1,14 +1,15 @@
-import utils
 import pandas as pd
 import numpy as np
 import os
 import gc
+from . import utils
 
 class M5AccuracyCook():
     def __init__(self, submission_path, days_to_train):
         super().__init__()
         self.submission_path = submission_path
         self.__data_folder = '..//data//'
+        self.__features_folder = '..//features//'
         self.__m5util = utils.M5AccuracyUtils(self.submission_path)
         self.__days_to_train = days_to_train
         
@@ -19,7 +20,7 @@ class M5AccuracyCook():
         This method will cook the data for us and create multipe feature sets, to train the data
         '''
         #######################################################
-        # Data Preparation Pipeline
+        # Data Preparation Pipeline.
         #
         #
         # Remember, that scikit-learn also provides a library
@@ -88,8 +89,8 @@ class M5AccuracyCook():
         # ########## TRAINING DATA (This data will be used to predict for X_Test) 
         # so without any filtering, we take complete evaluation set, 
         # because the prediction is in the future and data isn't available        
-        X_train_final = df_train.drop(drop_columns, axis=1) 
-        y_train_final = df_train['target']
+        X_train_final = df_eval.drop(drop_columns, axis=1) 
+        y_train_final = df_eval['target']
 
         # ########## VALIDATION DATA (for prediction from 1913 ~ 1941) 
         X_valid = df_eval[df_eval.d > df_eval.d.max()-28].drop(list(set(drop_columns) - set(['id'])), axis=1)
@@ -104,35 +105,13 @@ class M5AccuracyCook():
 
 
         # 10. Saving the Records
-        
+        X_train.to_csv(os.path.join(self.__features_folder,'X_train.csv'))
+        y_train.to_csv(os.path.join(self.__features_folder,'y_train.csv'))
 
+        X_valid.to_csv(os.path.join(self.__features_folder,'X_valid.csv'))
+        y_valid.to_csv(os.path.join(self.__features_folder,'y_valid.csv'))
 
+        X_test.to_csv(os.path.join(self.__features_folder,'X_test.csv'))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
-
-
+        X_train_final.to_csv(os.path.join(self.__features_folder,'X_train_final.csv'))
+        y_train_final.to_csv(os.path.join(self.__features_folder,'y_train_final.csv'))
