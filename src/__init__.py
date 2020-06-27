@@ -1,4 +1,6 @@
 import prepare
+import prepare1
+import prepare2
 import train
 import predict
 
@@ -11,17 +13,28 @@ class M5Accuracy():
         self.__models_folder = models_path
         self.__days_to_train = days_to_train
         self.__m5_cook = prepare.M5AccuracyCook(self.__features_folder,self.__data_folder,self.__days_to_train)        
+        self.__m5_cook1 = prepare1.M5AccuracyCook1(self.__features_folder,self.__data_folder,self.__days_to_train)        
+        self.__m5_cook2 = prepare2.M5AccuracyCook2(self.__features_folder,self.__data_folder,self.__days_to_train)        
         self.__m5_trainer = train.M5AccuracyTriner(self.__features_folder,self.__models_folder)
         self.__m5_predictor = predict.M5AccuracyPredictor(self.__features_folder,self.__models_folder,self.__submission_folder,self.__data_folder)
         
 
     def execute_m5(self,bypass_cooking, bypass_training):
         # data preparation
-        if bypass_cooking==False: self.__m5_cook.cook_data()
+        if bypass_cooking==False: 
+            #self.__m5_cook.cook_data()
+            self.__m5_cook1.cook_data()
+            print('\n\n\n')
+            self.__m5_cook2.cook_data()
         # training the models
-        if bypass_training==False: self.__m5_trainer.train_models()
+        #if bypass_training==False: self.__m5_trainer.train_models()
         # doing the predictions and saving them
-        self.__m5_predictor.predict()
+        #self.__m5_predictor.predict()
+        # perform stacking
+
+        # perform boosting
+
+        # perform averaging
 
 
 
@@ -35,7 +48,7 @@ if __name__ =='__main__':
     features_path = '..//features//'
     models_path = '..//models//'
     days_to_train=365
-    bypass_cooking = True # False means data preparation will be done again
+    bypass_cooking = False # False means data preparation will be done again
     bypass_training = True # False means the models will be trained again
 
     #instantiation of m5 main object

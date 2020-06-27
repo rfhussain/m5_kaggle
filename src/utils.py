@@ -19,12 +19,27 @@ class M5AccuracyUtils():
         self.__data_folder = data_folder
         #self.init_event()
 
-    def get_rolling_means_lags(self):
-        lags = [7, 28]
-        lag_cols = [f'lag_{lag}' for lag in lags]
-        for win in wins :
-            for lag,lag_col in zip(lags, lag_cols):
+    def add_rolling_means(self,df,wins,shift_range,lag_cols):
+        '''
+        this function will add the rolling mean with the specified window
+        parameters:
+        df : the data frame to add the mean to 
+        win: the window to add the rolling mean
+        shift_range: the lag range
+        '''
+        for win in tqdm(wins):
+            for lag,lag_col in zip(shift_range, lag_cols):
                 df[f"rmean_{lag}_{win}"] = df[["id", lag_col]].groupby("id")[lag_col].transform(lambda x : x.rolling(win).mean())
+        
+        #dropping the nulls
+        df.dropna(inplace=True)
+
+        #type casting
+        for mean_col in [col for col in df.columns if 'rmean' in str(col)]:
+            df[mean_col] = df[mean_col].astype('int16')  
+
+        
+
 
     def get_mean_attributes(self, mean_cols,index_cols, df):
         '''
