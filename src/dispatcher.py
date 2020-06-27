@@ -18,6 +18,8 @@ xgb_params = {
 lgb_params = {
                'feature_fraction': 0.75,
                'metric': 'rmse',
+               'objective': 'rmse',
+               'lambda_l2': 0.1,
                'nthread':-1, 
                'min_data_in_leaf': 2**7, 
                'bagging_fraction': 0.75, 

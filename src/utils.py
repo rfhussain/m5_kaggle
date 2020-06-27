@@ -90,7 +90,8 @@ class M5AccuracyUtils():
         df_prices = self.__get_prices_df()
 
         #merging sales with calendar
-        df = df.merge(df_cal[['wm_yr_wk','wday','d','month','year','dom']], on=['d'], how='left')
+        calendar_merge_cols = ['wm_yr_wk','wday','d','month','year','dom']
+        df = df.merge(df_cal[calendar_merge_cols], on=['d'], how='left')
         
         #merging sales with prices
         df = df.merge(df_prices, how='left', on=['store_id','item_id','wm_yr_wk'])
