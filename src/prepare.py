@@ -4,6 +4,7 @@ import os
 import gc
 import utils
 from datetime import datetime 
+import joblib
 
 
 class M5AccuracyCook():
@@ -27,7 +28,7 @@ class M5AccuracyCook():
         # for pipeline, where we can add even the training of 
         # model in the pipeline
         #######################################################
-
+        self.__m5util.init_event()
         self.__m5util.log_event(0,'preparing to cook...')
 
         # 1. read the evaluation data set
@@ -74,10 +75,7 @@ class M5AccuracyCook():
         
         self.__m5util.log_event(7,'restricted the data by ' + str(self.__days_to_train))
 
-        print('\n')
-
-
-
+        
         #####################EXTRA FUNCTION#####################
         #
         # Deleting additional columns which otherwise should
@@ -147,19 +145,19 @@ class M5AccuracyCook():
         # 10. Saving the Records
 
         # ########## Train Set  (1 ~ 1942-28)  means 1~1913
-        X_train.to_csv(os.path.join(self.__features_folder,'X_train.csv'))
-        y_train.to_csv(os.path.join(self.__features_folder,'y_train.csv'))
+        X_train.to_csv(os.path.join(self.__features_folder,'X_train.csv'), index=False)
+        y_train.to_csv(os.path.join(self.__features_folder,'y_train.csv'), index=False)
 
         # ########## Valid Set  (1913 ~ 1942) for prediction
-        X_valid.to_csv(os.path.join(self.__features_folder,'X_valid.csv'))
-        y_valid.to_csv(os.path.join(self.__features_folder,'y_valid.csv'))
+        X_valid.to_csv(os.path.join(self.__features_folder,'X_valid.csv'), index=False)
+        y_valid.to_csv(os.path.join(self.__features_folder,'y_valid.csv'), index=False)
 
         # ########## Test set (1942 ~ 1969) for prediction
-        X_test.to_csv(os.path.join(self.__features_folder,'X_test.csv'))
+        X_test.to_csv(os.path.join(self.__features_folder,'X_test.csv'), index=False)
 
         # ########## Final Training Set (1 ~ 1942) for training data to predict on test set(1942 ~ 1969)
-        X_train_final.to_csv(os.path.join(self.__features_folder,'X_train_final.csv'))
-        y_train_final.to_csv(os.path.join(self.__features_folder,'y_train_final.csv'))
+        X_train_final.to_csv(os.path.join(self.__features_folder,'X_train_final.csv'), index=False)
+        y_train_final.to_csv(os.path.join(self.__features_folder,'y_train_final.csv'), index=False)
 
 
         self.__m5util.log_event(10,'saved the feature set at ' + str(self.__features_folder)  + ' folder')

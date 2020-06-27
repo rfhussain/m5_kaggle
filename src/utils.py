@@ -17,8 +17,14 @@ class M5AccuracyUtils():
     def __init__(self,data_folder):
         super().__init__()
         self.__data_folder = data_folder
-        self.init_event()
+        #self.init_event()
 
+    def get_rolling_means_lags(self):
+        lags = [7, 28]
+        lag_cols = [f'lag_{lag}' for lag in lags]
+        for win in wins :
+            for lag,lag_col in zip(lags, lag_cols):
+                df[f"rmean_{lag}_{win}"] = df[["id", lag_col]].groupby("id")[lag_col].transform(lambda x : x.rolling(win).mean())
 
     def get_mean_attributes(self, mean_cols,index_cols, df):
         '''
@@ -197,9 +203,6 @@ class M5AccuracyUtils():
             df = pd.merge(df, train_shift, on=index_cols, how='left').fillna(0)
             #print(f'performed the merge ---------{day_shift}--------------..\n')
             #print('*'*day_shift, day_shift)
-
-        
-        print('\ndone with the lags...\n')
 
         # type casting the lag columns (in my opinion lags are int values)
         for lag_col in [col for col in df.columns if 'lag' in str(col)]:
