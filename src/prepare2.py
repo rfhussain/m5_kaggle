@@ -15,6 +15,7 @@ class M5AccuracyCook2():
         self.__m5util = utils.M5AccuracyUtils(self.__data_folder)
         self.__days_to_train = days_to_train
         self.__cook_id =2
+
     
     def cook_data(self):
         '''
@@ -144,8 +145,8 @@ class M5AccuracyCook2():
         drop_columns = ['id','d','target','month','year','dom','target_item_id','target_dept_id']
         X_train.drop(drop_columns, axis=1, inplace=True)
         X_train_final.drop(drop_columns, axis=1, inplace=True)
-        X_valid.drop(list(set(drop_columns) - set(['id'])), axis=1)
-        X_test.drop(list(set(drop_columns) - set(['id'])), axis=1)
+        X_valid.drop(list(set(drop_columns) - set(['id'])), axis=1, inplace=True)
+        X_test.drop(list(set(drop_columns) - set(['id'])), axis=1, inplace=True)
 
         self.__m5util.log_event(9,'data split performed on X_train, X_valid, X_test & X_test_final...')
 

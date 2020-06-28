@@ -48,11 +48,11 @@ class M5AccuracyPredictor():
 
 
         df_submission_valid= X_valid[['id','d']]
-        df_submission_valid['target'] = preds_valid
+        df_submission_valid['target'] = preds_valid.clip(0,preds_valid.max())
 
 
         df_submission_eval = X_test[['id','d']]
-        df_submission_eval['target'] = preds_eval
+        df_submission_eval['target'] = preds_eval.clip(0,preds_eval.max())
 
         #generating the prediction columns
         col_append = ['F'+str(i) for i in range(1,29)]
