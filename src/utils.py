@@ -100,16 +100,24 @@ class M5AccuracyUtils():
         df = pd.read_csv(os.path.join(self.__data_folder,'sell_prices.csv'))
         return df
 
-    def merge_sales_calendar_prices(self,df):
+    def merge_sales_calendar_prices(self,df,cat_col):
         df_cal = self.__get_calendar_df()
         df_prices = self.__get_prices_df()
 
         #merging sales with calendar
-        calendar_merge_cols = ['wm_yr_wk','wday','d','month','year','dom']
+        if int(cat_col)==0:
+            calendar_merge_cols = ['wm_yr_wk','wday','d','month','year','dom']
+        elif int(cat_col)==1:
+            calendar_merge_cols = ['wm_yr_wk','wday','d','month','year','dom','snap_CA','snap_TX','snap_WI']
+
         df = df.merge(df_cal[calendar_merge_cols], on=['d'], how='left')
+
         
         #merging sales with prices
-        df = df.merge(df_prices, how='left', on=['store_id','item_id','wm_yr_wk'])
+        if int(cat_col)==0:
+            df = df.merge(df_prices, how='left', on=['store_id','item_id','wm_yr_wk'])
+        else:
+            df = df.merge(df_prices, how='left', on=['store_id','item_id','wm_yr_wk'])
 
         #type casting the resulting columns
         df.wm_yr_wk     = df.wm_yr_wk.astype('int16')
@@ -118,6 +126,13 @@ class M5AccuracyUtils():
         df.dom          = df.dom.astype('int8')
         df.year         = df.year.astype('int16')
         df.sell_price   = df.sell_price.astype('float16')
+        
+        if int(cat_col)==1:
+            df.snap_CA   = df.snap_CA.astype('int8')
+            df.snap_TX   = df.snap_TX.astype('int8')
+            df.snap_WI   = df.snap_WI.astype('int8')
+            
+
 
         #deleting the dataframes not required
         del df_cal, df_prices
@@ -228,13 +243,22 @@ class M5AccuracyUtils():
         # returning the resulting data frame
         return df
     
-    def log_event(self,sn,msg):
-        print('{:<5d}{:<77}{:<11}'.format(sn,msg,datetime.now().strftime("%H:%M:%S")))
+    def log_event(self,sn,msg,df):
+        if df is not None:
+            err_msg = msg + '\r columns for df :' + str(df.columns)
+            self.__process_log(err_msg)
+
+        print('{:<5d}{:<77}{:<11}'.format(sn,msg,datetime.now().strftime("%H:%M:%S")))        
 
     def init_event(self):
         print('\n')
         print('{:5}{:77}{:11}'.format('SN','Event Performed','Time Elapsed'))
         print('-----------------------------------------------------------------------------------------------')
+
+    def __process_log(self,errtxt):
+        f = open('logs.txt','a+')
+        f.writelines('' + errtxt + '\r\r\r')
+        f.close()
 
 
 

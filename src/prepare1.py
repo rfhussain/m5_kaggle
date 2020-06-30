@@ -43,7 +43,8 @@ class M5AccuracyCook1():
         self.__m5util.log_event(2,'performed the melt of evaluation data frame... ')
 
         # 3. joining the calendar and prices
-        df_eval = self.__m5util.merge_sales_calendar_prices(df_eval)
+        df_eval = self.__m5util.merge_sales_calendar_prices(df_eval,0)        
+
 
         self.__m5util.log_event(3,'joined the calendar and prices with evaluation data... ')
 
@@ -144,8 +145,8 @@ class M5AccuracyCook1():
         drop_columns = ['id','d','target','month','year','dom','target_item_id','target_dept_id']
         X_train.drop(drop_columns, axis=1, inplace=True)
         X_train_final.drop(drop_columns, axis=1, inplace=True)
-        X_valid.drop(list(set(drop_columns) - set(['id'])), axis=1)
-        X_test.drop(list(set(drop_columns) - set(['id'])), axis=1)
+        X_valid.drop(list(set(drop_columns) - set(['id','d'])), axis=1, inplace=True)
+        X_test.drop(list(set(drop_columns) - set(['id','d'])), axis=1, inplace=True)
 
 
         self.__m5util.log_event(9,'data split performed on X_train, X_valid, X_test & X_test_final...')

@@ -42,8 +42,8 @@ class M5AccuracyPredictor():
         self.__m5utils.log_event(2,'loaded the models...')
         
         # predictiona
-        preds_valid = model.predict(X_valid.drop(['id'], axis=1))
-        preds_eval =  model.predict(X_test.drop(['id'], axis=1))
+        preds_valid = model.predict(X_valid.drop(['id','d'], axis=1))
+        preds_eval =  model.predict(X_test.drop(['id','d'], axis=1))
         self.__m5utils.log_event(3,'predictions done....')
 
 

@@ -42,7 +42,7 @@ class M5AccuracyCook():
         self.__m5util.log_event(2,'performed the melt of evaluation data frame... ')
 
         # 3. joining the calendar and prices
-        df_eval = self.__m5util.merge_sales_calendar_prices(df_eval)
+        df_eval = self.__m5util.merge_sales_calendar_prices(df_eval,0)
 
         self.__m5util.log_event(3,'joined the calendar and prices with evaluation data... ')
 
@@ -123,8 +123,8 @@ class M5AccuracyCook():
         # ########## TRAINING DATA (This data will be used to predict for X_Test) 
         # so without any filtering, we take complete evaluation set, 
         # because the prediction is in the future and data isn't available        
-        X_train_final = df_eval.drop(drop_columns, axis=1) 
-        y_train_final = df_eval['target']
+        #X_train_final = df_eval.drop(drop_columns, axis=1) 
+        #y_train_final = df_eval['target']
 
         # ########## VALIDATION DATA (for prediction from 1913 ~ 1941) 
         X_valid = df_eval[df_eval.d > df_eval.d.max()-28].drop(list(set(drop_columns) - set(['id'])), axis=1)
@@ -154,8 +154,8 @@ class M5AccuracyCook():
         X_test.to_csv(os.path.join(self.__features_folder,'X_test.csv'), index=False)
 
         # ########## Final Training Set (1 ~ 1942) for training data to predict on test set(1942 ~ 1969)
-        X_train_final.to_csv(os.path.join(self.__features_folder,'X_train_final.csv'), index=False)
-        y_train_final.to_csv(os.path.join(self.__features_folder,'y_train_final.csv'), index=False)
+        #X_train_final.to_csv(os.path.join(self.__features_folder,'X_train_final.csv'), index=False)
+        #y_train_final.to_csv(os.path.join(self.__features_folder,'y_train_final.csv'), index=False)
 
 
         self.__m5util.log_event(10,'saved the feature set at ' + str(self.__features_folder)  + ' folder')

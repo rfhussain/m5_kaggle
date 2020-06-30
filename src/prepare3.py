@@ -7,71 +7,16 @@ from datetime import datetime
 import joblib
 
 
-class M5AccuracyCook2():
+class M5AccuracyCook3():
     def __init__(self, features_folder, data_folder , days_to_train):
         super().__init__()
         self.__data_folder = data_folder
         self.__features_folder = features_folder
         self.__m5util = utils.M5AccuracyUtils(self.__data_folder)
-        self.__days_to_train = days_to_train
-        self.__cook_id =2
+        self.__days_to_train = days_to_train - 730 # (since lags are more, so let's try putting just 1100-370=730 days or 2 years)
+        self.__cook_id =3
 
-    def get_test_data(self):
-        print('hi')
-        df_eval = pd.read_csv(os.path.join(self.__data_folder,'sales_train_validation.csv'))
-
-        tr_last = 1913
-        for day in range(tr_last+1, tr_last+ 28 +1):
-            df_eval[f"d_{day}"] = np.nan
-
-        df_eval = self.__m5util.melt_dataframe(df_eval)
-        df_eval = self.__m5util.merge_sales_calendar_prices(df_eval,0)
-        print(df_eval.d.max(),df_eval.d.min())
-        df_eval = self.__m5util.add_group_by_cols(['item_id','dept_id'],df_eval)
-        print(df_eval.d.max(),df_eval.d.min())
-        df_eval = self.__m5util.add_label_encodes(df_eval)
-        print(df_eval.d.max(),df_eval.d.min())
-
-        #distributing the data frame from the perspective of X_valid and X_test
-
-
-        df_eval =df_eval[df_eval.d > 1913]
-        print(df_eval.d.max(),df_eval.d.min())
-        
-        
-        mean_enc_cols = [col for col in df_eval.columns if 'mean' in str(col)]
-        exception_cols = mean_enc_cols + ['date', 'day', 'id','sell_price', 'snap_CA', 'snap_TX', 'snap_WI',
-                                  'state_id', 'wday', 'wm_yr_wk','year','month','dom','cat_id_code','dept_id_code',
-                                  'state_id_code']
-
-        index_cols = ['store_id_code','item_id_code','d']
-        #shift_range = [x for x in range(1,29)] 
-        shift_range = [7,21,28] 
-        df_eval = self.__m5util.add_lags(df_eval,shift_range,index_cols,exception_cols)
-        print(df_eval.d.max(),df_eval.d.min())
-
-
-        # 8.1 adding the rolling means on the lags
-        wins=[7,21,28]
-        lag_cols = [col for col in df_eval.columns if 'lag' in str(col)]
-        shift_range = [7,21,28]
-        self.__m5util.add_rolling_means(df_eval,wins,shift_range,lag_cols)
-        print(df_eval.d.max(),df_eval.d.min())
-
-        # dropping the columns
-        drop_columns = ['id','d','target','month','year','dom','target_item_id','target_dept_id','wm_yr_wk','wday','sell_price']
-        df_eval.drop(list(set(drop_columns) - set(['id','d'])), axis=1, inplace=True)
-        print(df_eval.d.max(),df_eval.d.min())
-        
-        return df_eval
-
-
-        
-
-
-
-
-
+    
     def cook_data(self):
         '''
         This is a data preparation class method
@@ -91,28 +36,33 @@ class M5AccuracyCook2():
         # 1. read the evaluation data set
         df_eval = pd.read_csv(os.path.join(self.__data_folder,'sales_train_evaluation.csv'))
 
-        self.__m5util.log_event(1,'evaluation dataframe loaded...',df_eval)
+        self.__m5util.log_event(1,'evaluation dataframe loaded...', df_eval)
 
         # 2. melting the data frame
         df_eval = self.__m5util.melt_dataframe(df_eval)
 
-        self.__m5util.log_event(2,'performed the melt of evaluation data frame... ', df_eval)
+        self.__m5util.log_event(2,'performed the melt of evaluation data frame... ',df_eval)
 
-        # 3. joining the calendar and prices
-        df_eval = self.__m5util.merge_sales_calendar_prices(df_eval,0)
+        # 3. joining the calendar and prices (bypassing 1, we will include snap columns)
+        df_eval = self.__m5util.merge_sales_calendar_prices(df_eval,1)
 
-        self.__m5util.log_event(3,'joined the calendar and prices with evaluation data... ', df_eval)
+        self.__m5util.log_event(3,'joined the calendar (including snap cols) & prices with eval data... ',df_eval)
 
         # 4. adding the group by columns
+        '''
+        item_id lag (how many items are sold across USA on a particular day)
+        dept_id lag (how many items are sold per department across USA on a particular day)
+        remember that department are under cat_id (which is only 3 so under each cat there are around 4 dept_id)
+        '''
         group_by_cols = ['item_id','dept_id']
-        df_eval = self.__m5util.add_group_by_cols(group_by_cols,df_eval)
+        #df_eval = self.__m5util.add_group_by_cols(group_by_cols,df_eval)
 
-        self.__m5util.log_event(4,'added the group by cols for... ' + str(group_by_cols),df_eval)
+        self.__m5util.log_event(4,'skipped adding group by on.. ' + str(group_by_cols),None)
 
         # 5. adding the label encodes
         df_eval = self.__m5util.add_label_encodes(df_eval)
 
-        self.__m5util.log_event(5,'performed the label encodes on categorical columns... ', df_eval)
+        self.__m5util.log_event(5,'performed the label encodes on categorical columns... ',df_eval)
 
         # 6. adding the Means
         #mean_enc_cols = ['store_id_code','cat_id_code','state_id_code','item_id_code','dept_id_code']
@@ -140,24 +90,24 @@ class M5AccuracyCook2():
         # however we are currently deleting them
         # ['wm_yr_wk','wday','sell_price']
         #####################EXTRA FUNCTION#####################
-        df_eval = self.__m5util.del_additional_cols(df_eval)
+        #df_eval = self.__m5util.del_additional_cols(df_eval)
 
 
         # 8. adding the lags
         mean_enc_cols = [col for col in df_eval.columns if 'mean' in str(col)]
         exception_cols = mean_enc_cols + ['date', 'day', 'id','sell_price', 'snap_CA', 'snap_TX', 'snap_WI',
-                                  'state_id', 'wday', 'wm_yr_wk','year','month','dom','cat_id_code','dept_id_code',
-                                  'state_id_code']
+                                  'state_id', 'wday', 'wm_yr_wk','year','month','dom','snap_CA','snap_TX','snap_WI',
+                                  'cat_id_code','state_id_code','dept_id_code',]
 
         index_cols = ['store_id_code','item_id_code','d']
         #shift_range = [x for x in range(1,29)] 
-        shift_range = [7,21,28] 
+        shift_range = [4,8,12,16,20,24,28] 
         df_eval = self.__m5util.add_lags(df_eval,shift_range,index_cols,exception_cols)
 
         self.__m5util.log_event(8,'added lags...',df_eval)
 
         # 8.1 adding the rolling means on the lags
-        wins=[7,21,28]
+        wins=[7,28]
         lag_cols = [col for col in df_eval.columns if 'lag' in str(col)]
         shift_range = [7,21,28]
         self.__m5util.add_rolling_means(df_eval,wins,shift_range,lag_cols)
@@ -197,8 +147,21 @@ class M5AccuracyCook2():
         #adding 28 for all the days
         X_test.d = X_test.d + 28 
 
+
+
+        drop_columns = ['id','d','target','month','year','dom','wm_yr_wk','wday','sell_price']
+
+        print('\n\n\n')
+        print(X_train.columns)
+        print('\n\n\n')
+        print('current drop columns are: ' , str(drop_columns))
+        print('\n\n\n')
+        drop_columns = input('enter the columns : ')
+        drop_columns = drop_columns.split(',')
+
+
         # dropping the columns
-        drop_columns = ['id','d','target','month','year','dom','target_item_id','target_dept_id']
+        
         X_train.drop(drop_columns, axis=1, inplace=True)
         #X_train_final.drop(drop_columns, axis=1, inplace=True)
         X_valid.drop(list(set(drop_columns) - set(['id','d'])), axis=1, inplace=True)
