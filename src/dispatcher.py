@@ -1,5 +1,6 @@
 from sklearn import ensemble
 from sklearn.linear_model import LinearRegression
+  
 import xgboost as xgb
 import lightgbm as lgb
 
@@ -35,5 +36,5 @@ lgb_params = {
 MODELS = {
     'lgb': lgb_params,  
     'xgb': xgb_params,
-    'lr' : LinearRegression(n_jobs=-1, normalize=False, fit_intercept=True, copy_X=True)
+    'lr' : LinearRegression(n_jobs=-1, normalize=False, fit_intercept=True, copy_X=True) 
 }
