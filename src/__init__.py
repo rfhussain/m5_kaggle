@@ -24,17 +24,17 @@ class M5Accuracy():
     def execute_m5(self,bypass_cooking, bypass_training):
         # data preparation
         if bypass_cooking==False: 
-            #self.__m5_cook.cook_data()
-            #self.__m5_cook1.cook_data()
-            #print('\n\n\n')
-            #self.__m5_cook2.cook_data()
-            #print('\n\n\n')
+            self.__m5_cook.cook_data()
+            self.__m5_cook1.cook_data()
+            print('\n\n\n')
+            self.__m5_cook2.cook_data()
+            print('\n\n\n')
             self.__m5_cook3.cook_data()
 
         # training the models
-        #if bypass_training==False: self.__m5_trainer.train_models()
+        if bypass_training==False: self.__m5_trainer.train_models()
         # doing the predictions and saving them
-        #self.__m5_predictor.predict()
+        self.__m5_predictor.predict()
         # perform stacking
 
         # perform boosting
